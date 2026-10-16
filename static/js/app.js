@@ -22,6 +22,22 @@ document.addEventListener("DOMContentLoaded", () => {
   const addMoreImagesBtn = document.getElementById("addMoreImagesBtn");
   const clearAllImagesBtn = document.getElementById("clearAllImagesBtn");
 
+  // Inline Real-Time Camera Elements
+  const browseFilesBtn = document.getElementById("browseFilesBtn");
+  const openCameraBtn = document.getElementById("openCameraBtn");
+  const addWithCameraBtn = document.getElementById("addWithCameraBtn");
+  const cameraContainer = document.getElementById("cameraContainer");
+  const cameraVideo = document.getElementById("cameraVideo");
+  const cameraCanvas = document.getElementById("cameraCanvas");
+  const cameraFlash = document.getElementById("cameraFlash");
+  const cameraFlipBtn = document.getElementById("cameraFlipBtn");
+  const closeCameraBtn = document.getElementById("closeCameraBtn");
+  const shutterBtn = document.getElementById("shutterBtn");
+  const cameraError = document.getElementById("cameraError");
+  const cameraErrorMessage = document.getElementById("cameraErrorMessage");
+  const retryCameraBtn = document.getElementById("retryCameraBtn");
+  const cameraSnappedCount = document.getElementById("cameraSnappedCount");
+
   const platformSelect = document.getElementById("platformSelect");
   const toneSelect = document.getElementById("toneSelect");
   const keywordInput = document.getElementById("keywordInput");
@@ -47,6 +63,11 @@ document.addEventListener("DOMContentLoaded", () => {
   let selectedFiles = [];
   let toastTimeout = null;
   let currentResults = [];
+
+  // Inline Camera State
+  let activeCameraStream = null;
+  let currentFacingMode = "user"; // "user" or "environment"
+  let sessionSnapCount = 0;
 
   // ============================================================================
   // Toast Notification System
@@ -85,18 +106,22 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function renderGallery() {
     if (selectedFiles.length === 0) {
-      previewContainer.classList.add("hidden");
-      previewContainer.classList.remove("flex");
-      dropzonePrompt.classList.remove("hidden");
+      if (cameraContainer.classList.contains("hidden")) {
+        previewContainer.classList.add("hidden");
+        previewContainer.classList.remove("flex");
+        dropzonePrompt.classList.remove("hidden");
+      }
       previewGallery.innerHTML = "";
       imageInput.value = "";
       return;
     }
 
-    // Hide default prompt and show gallery container
-    dropzonePrompt.classList.add("hidden");
-    previewContainer.classList.remove("hidden");
-    previewContainer.classList.add("flex");
+    // Only switch to previewContainer if camera is NOT actively open
+    if (cameraContainer.classList.contains("hidden")) {
+      dropzonePrompt.classList.add("hidden");
+      previewContainer.classList.remove("hidden");
+      previewContainer.classList.add("flex");
+    }
 
     const totalBytes = selectedFiles.reduce((acc, f) => acc + f.size, 0);
     const countLabel = selectedFiles.length === 1 ? "1 Image Staged" : `${selectedFiles.length} Images Staged`;
@@ -184,18 +209,188 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function clearAllImages() {
     selectedFiles = [];
+    sessionSnapCount = 0;
+    if (cameraSnappedCount) cameraSnappedCount.textContent = "0 snaps";
     renderGallery();
     showToast("Cleared all images.");
+  }
+
+  // ============================================================================
+  // Inline Real-Time Camera System (ChatGPT Style)
+  // ============================================================================
+  async function openInlineCamera() {
+    // Hide default dropzone prompt and staging preview while camera is open
+    dropzonePrompt.classList.add("hidden");
+    previewContainer.classList.add("hidden");
+    previewContainer.classList.remove("flex");
+
+    // Reveal inline camera viewfinder container
+    cameraContainer.classList.remove("hidden");
+    cameraContainer.classList.add("flex");
+    cameraError.classList.add("hidden");
+
+    if (window.lucide) {
+      lucide.createIcons();
+    }
+
+    await startCameraStream();
+  }
+
+  async function startCameraStream() {
+    stopCameraStream();
+
+    const constraints = {
+      video: {
+        facingMode: currentFacingMode,
+        width: { ideal: 1920 },
+        height: { ideal: 1080 }
+      },
+      audio: false
+    };
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia(constraints);
+      activeCameraStream = stream;
+      cameraVideo.srcObject = stream;
+      await cameraVideo.play();
+      cameraError.classList.add("hidden");
+    } catch (err) {
+      console.warn("[CapAI Camera]", err);
+      cameraError.classList.remove("hidden");
+      if (err.name === "NotAllowedError" || err.name === "PermissionDeniedError") {
+        cameraErrorMessage.textContent = "Camera permission was denied. Please allow camera access in your browser settings or URL bar.";
+      } else if (err.name === "NotFoundError" || err.name === "DevicesNotFoundError") {
+        cameraErrorMessage.textContent = "No camera hardware detected on this device.";
+      } else {
+        cameraErrorMessage.textContent = `Camera error: ${err.message || "Unable to access live webcam feed."}`;
+      }
+    }
+  }
+
+  function stopCameraStream() {
+    if (activeCameraStream) {
+      activeCameraStream.getTracks().forEach((track) => track.stop());
+      activeCameraStream = null;
+    }
+    if (cameraVideo) {
+      cameraVideo.srcObject = null;
+    }
+  }
+
+  function closeInlineCamera() {
+    stopCameraStream();
+    cameraContainer.classList.add("hidden");
+    cameraContainer.classList.remove("flex");
+
+    if (selectedFiles.length > 0) {
+      previewContainer.classList.remove("hidden");
+      previewContainer.classList.add("flex");
+    } else {
+      dropzonePrompt.classList.remove("hidden");
+    }
+
+    if (window.lucide) {
+      lucide.createIcons();
+    }
+  }
+
+  async function flipCamera() {
+    currentFacingMode = currentFacingMode === "user" ? "environment" : "user";
+    await startCameraStream();
+  }
+
+  function capturePhotoFromCamera() {
+    if (!activeCameraStream || !cameraVideo.videoWidth) {
+      showToast("Camera feed is not ready yet.", true);
+      return;
+    }
+
+    // 1. Shutter flash visual feedback
+    cameraFlash.classList.add("flash-active");
+    setTimeout(() => {
+      cameraFlash.classList.remove("flash-active");
+    }, 120);
+
+    // 2. Render frame to offscreen canvas
+    const width = cameraVideo.videoWidth;
+    const height = cameraVideo.videoHeight;
+    cameraCanvas.width = width;
+    cameraCanvas.height = height;
+
+    const ctx = cameraCanvas.getContext("2d");
+    ctx.drawImage(cameraVideo, 0, 0, width, height);
+
+    // 3. Export to JPEG Blob & File
+    cameraCanvas.toBlob((blob) => {
+      if (!blob) {
+        showToast("Snapshot failed to encode.", true);
+        return;
+      }
+
+      sessionSnapCount++;
+      cameraSnappedCount.textContent = `${sessionSnapCount} snap${sessionSnapCount > 1 ? "s" : ""}`;
+
+      const now = new Date();
+      const pad = (n) => String(n).padStart(2, "0");
+      const timestamp = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
+      const filename = `snap_${timestamp}_${sessionSnapCount}.jpg`;
+
+      const file = new File([blob], filename, { type: "image/jpeg" });
+      selectedFiles.push(file);
+
+      // Silently update gallery badge & staging without closing camera
+      renderGallery();
+
+      showToast(`Photo #${selectedFiles.length} captured and staged!`);
+    }, "image/jpeg", 0.94);
   }
 
   // ============================================================================
   // Event Listeners for Dropzone and Controls
   // ============================================================================
   dropzone.addEventListener("click", (e) => {
-    // Avoid triggering file picker when clicking buttons inside preview
-    if (e.target.closest("button")) return;
+    // Avoid triggering file picker when clicking buttons or inside active camera
+    if (e.target.closest("button") || e.target.closest("#cameraContainer")) return;
     imageInput.click();
   });
+
+  browseFilesBtn?.addEventListener("click", (e) => {
+    e.stopPropagation();
+    imageInput.click();
+  });
+
+  openCameraBtn?.addEventListener("click", (e) => {
+    e.stopPropagation();
+    openInlineCamera();
+  });
+
+  addWithCameraBtn?.addEventListener("click", (e) => {
+    e.stopPropagation();
+    openInlineCamera();
+  });
+
+  closeCameraBtn?.addEventListener("click", (e) => {
+    e.stopPropagation();
+    closeInlineCamera();
+  });
+
+  cameraFlipBtn?.addEventListener("click", (e) => {
+    e.stopPropagation();
+    flipCamera();
+  });
+
+  retryCameraBtn?.addEventListener("click", (e) => {
+    e.stopPropagation();
+    startCameraStream();
+  });
+
+  shutterBtn?.addEventListener("click", (e) => {
+    e.stopPropagation();
+    capturePhotoFromCamera();
+  });
+
+  // Stop camera when closing/navigating away from page
+  window.addEventListener("beforeunload", stopCameraStream);
 
   addMoreImagesBtn.addEventListener("click", (e) => {
     e.stopPropagation();

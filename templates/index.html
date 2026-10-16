@@ -167,7 +167,7 @@
             <input type="file" id="imageInput" name="images" multiple accept="image/png, image/jpeg, image/jpg, image/webp, image/gif" class="sr-only">
             
             <!-- Default Dropzone Content -->
-            <div id="dropzonePrompt" class="space-y-3">
+            <div id="dropzonePrompt" class="space-y-4">
               <div class="w-14 h-14 rounded-2xl bg-violet-600/10 border border-violet-500/20 text-violet-400 flex items-center justify-center mx-auto shadow-inner">
                 <i data-lucide="cloud-upload" class="w-7 h-7"></i>
               </div>
@@ -179,6 +179,125 @@
                 <p class="text-slate-400 text-xs sm:text-sm mt-1">
                   Drag and drop your photos here, or <span class="text-violet-400 underline font-medium">browse files</span>
                 </p>
+              </div>
+
+              <!-- Action buttons: Browse Files or Take Photo -->
+              <div class="flex items-center justify-center gap-3 pt-1">
+                <button 
+                  type="button" 
+                  id="browseFilesBtn" 
+                  class="px-3.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700/80 border border-slate-700/80 text-slate-200 text-xs font-semibold flex items-center gap-1.5 transition-all shadow-sm active:scale-95"
+                >
+                  <i data-lucide="folder-open" class="w-3.5 h-3.5 text-violet-400"></i>
+                  <span>Browse Files</span>
+                </button>
+                <span class="text-slate-500 text-xs">or</span>
+                <button 
+                  type="button" 
+                  id="openCameraBtn" 
+                  class="px-3.5 py-1.5 rounded-xl bg-violet-600/20 hover:bg-violet-600/30 border border-violet-500/30 text-violet-300 text-xs font-semibold flex items-center gap-1.5 transition-all shadow-sm active:scale-95 group"
+                >
+                  <i data-lucide="camera" class="w-3.5 h-3.5 text-violet-400 group-hover:scale-110 transition-transform"></i>
+                  <span>Take Photo</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Inline Camera Viewfinder (ChatGPT Style, hidden initially) -->
+            <div id="cameraContainer" class="hidden w-full flex-col relative rounded-2xl overflow-hidden border border-violet-500/30 bg-slate-950 shadow-2xl">
+              
+              <!-- Video Viewfinder Feed -->
+              <div class="relative w-full aspect-video sm:aspect-[16/10] max-h-[380px] bg-black flex items-center justify-center overflow-hidden">
+                <video id="cameraVideo" autoplay playsinline muted class="w-full h-full object-cover"></video>
+                <canvas id="cameraCanvas" class="hidden"></canvas>
+
+                <!-- Screen Flash Overlay -->
+                <div id="cameraFlash" class="absolute inset-0 bg-white pointer-events-none opacity-0 transition-opacity duration-150 z-30"></div>
+
+                <!-- Subtle Viewfinder Rule-of-Thirds Grid -->
+                <div class="absolute inset-0 grid grid-cols-3 grid-rows-3 pointer-events-none opacity-15">
+                  <div class="border-r border-b border-white"></div>
+                  <div class="border-r border-b border-white"></div>
+                  <div class="border-b border-white"></div>
+                  <div class="border-r border-b border-white"></div>
+                  <div class="border-r border-b border-white"></div>
+                  <div class="border-b border-white"></div>
+                  <div class="border-r border-white"></div>
+                  <div class="border-r border-white"></div>
+                  <div></div>
+                </div>
+
+                <!-- Top Camera Controls Bar -->
+                <div class="absolute top-3 inset-x-3 flex items-center justify-between z-20 pointer-events-auto">
+                  <div class="flex items-center gap-2">
+                    <span class="px-2.5 py-1 rounded-full bg-rose-500/20 text-rose-400 border border-rose-500/30 text-xs font-semibold flex items-center gap-1.5 backdrop-blur-md">
+                      <span class="w-2 h-2 rounded-full bg-rose-500 animate-pulse"></span>
+                      <span>LIVE CAMERA</span>
+                    </span>
+                  </div>
+
+                  <div class="flex items-center gap-2">
+                    <button 
+                      type="button" 
+                      id="cameraFlipBtn" 
+                      title="Switch Front / Rear Camera" 
+                      class="w-8 h-8 rounded-full bg-slate-900/80 hover:bg-slate-800 text-slate-200 border border-slate-700/80 flex items-center justify-center transition-all backdrop-blur-md"
+                    >
+                      <i data-lucide="refresh-cw" class="w-4 h-4 text-violet-300"></i>
+                    </button>
+                    <button 
+                      type="button" 
+                      id="closeCameraBtn" 
+                      title="Close Camera" 
+                      class="w-8 h-8 rounded-full bg-slate-900/80 hover:bg-rose-900/60 text-slate-200 hover:text-rose-300 border border-slate-700/80 hover:border-rose-500/40 flex items-center justify-center transition-all backdrop-blur-md"
+                    >
+                      <i data-lucide="x" class="w-4 h-4"></i>
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Camera Error / Blocked Overlay (Hidden by default) -->
+                <div id="cameraError" class="hidden absolute inset-0 bg-slate-950/95 flex flex-col items-center justify-center p-6 text-center z-40">
+                  <div class="w-12 h-12 rounded-full bg-rose-500/10 border border-rose-500/30 text-rose-400 flex items-center justify-center mb-3">
+                    <i data-lucide="camera-off" class="w-6 h-6"></i>
+                  </div>
+                  <h4 class="text-sm font-semibold text-slate-100">Camera Access Blocked or Unavailable</h4>
+                  <p id="cameraErrorMessage" class="text-xs text-slate-400 max-w-sm mt-1">
+                    Please allow camera permissions in your browser or connect a webcam to take photos.
+                  </p>
+                  <button 
+                    type="button" 
+                    id="retryCameraBtn" 
+                    class="mt-4 px-3 py-1.5 rounded-lg bg-violet-600 hover:bg-violet-500 text-white text-xs font-semibold flex items-center gap-1.5 transition-all"
+                  >
+                    <i data-lucide="rotate-cw" class="w-3.5 h-3.5"></i>
+                    <span>Retry Permission</span>
+                  </button>
+                </div>
+
+                <!-- Bottom Camera Bar Overlay with Shutter Trigger -->
+                <div class="absolute bottom-4 inset-x-0 flex items-center justify-center z-20 pointer-events-auto">
+                  <button 
+                    type="button" 
+                    id="shutterBtn" 
+                    class="w-16 h-16 rounded-full bg-white/20 p-1 flex items-center justify-center border-2 border-white transition-all transform active:scale-90 hover:scale-105 shutter-ring shadow-xl backdrop-blur-sm"
+                    title="Capture Photo"
+                  >
+                    <div class="w-full h-full rounded-full bg-white flex items-center justify-center shadow-inner">
+                      <div class="w-4 h-4 rounded-full bg-violet-600"></div>
+                    </div>
+                  </button>
+                </div>
+
+              </div>
+
+              <!-- Camera Footer Guidance -->
+              <div class="py-2 px-4 bg-slate-900/90 border-t border-slate-800 flex items-center justify-between text-xs text-slate-400">
+                <span class="flex items-center gap-1.5">
+                  <i data-lucide="sparkles" class="w-3.5 h-3.5 text-violet-400"></i>
+                  <span>Click shutter to snap photo directly into your batch.</span>
+                </span>
+                <span id="cameraSnappedCount" class="font-mono text-violet-300">0 snaps</span>
               </div>
             </div>
 
@@ -193,6 +312,14 @@
                   <span id="totalStagedSize" class="text-xs text-slate-400 font-mono">0 MB</span>
                 </div>
                 <div class="flex items-center gap-2">
+                  <button 
+                    type="button" 
+                    id="addWithCameraBtn" 
+                    class="px-2.5 py-1 rounded-lg bg-indigo-500/15 hover:bg-indigo-500/25 border border-indigo-500/25 text-indigo-300 text-xs font-medium flex items-center gap-1 transition-colors"
+                  >
+                    <i data-lucide="camera" class="w-3.5 h-3.5"></i>
+                    Camera
+                  </button>
                   <button 
                     type="button" 
                     id="addMoreImagesBtn" 
