@@ -1,0 +1,54 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+venv/
+.venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# Environment variables & secrets (API keys, tokens)
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+
+# IDE & Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.project
+.settings/
+
+# Operating System files
+.DS_Store
+Thumbs.db
+ehthumbs.db
+desktop.ini
+$RECYCLE.BIN/
+
+# Large Model weights, checkpoints & serialized models
+# (Heavy binary artifacts should be stored in cloud/releases, not Git repository history)
+models/*.keras
+models/*.h5
+models/*.pkl
+*.pt
+*.pth
+*.bin
+*.onnx
+*.safetensors
+*.ckpt
+
+# Temporary logs & cache
+*.log
+uploads/
+temp/
+tmp/
+.cache/

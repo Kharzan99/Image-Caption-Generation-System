@@ -1,0 +1,145 @@
+/* ==========================================================================
+   Image Caption Generator - 2026 SaaS Aesthetic Styles
+   ========================================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
+
+:root {
+  --font-main: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+  --primary-glow: radial-gradient(circle at 50% 0%, rgba(124, 58, 237, 0.18) 0%, rgba(15, 23, 42, 0) 70%);
+}
+
+body {
+  font-family: var(--font-main);
+  background-color: #090d16;
+  color: #f1f5f9;
+  overflow-x: hidden;
+  background-image: 
+    radial-gradient(circle at 50% 0%, rgba(99, 102, 241, 0.15) 0%, transparent 50%),
+    radial-gradient(circle at 100% 50%, rgba(168, 85, 247, 0.08) 0%, transparent 40%),
+    radial-gradient(circle at 0% 100%, rgba(59, 130, 246, 0.08) 0%, transparent 40%);
+  background-attachment: fixed;
+}
+
+/* Glassmorphism Panels */
+.glass-panel {
+  background: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.5), 0 0 1px 1px rgba(255, 255, 255, 0.05) inset;
+}
+
+.glass-panel-subtle {
+  background: rgba(30, 41, 59, 0.45);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.glass-card-interactive {
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.glass-card-interactive:hover {
+  border-color: rgba(139, 92, 246, 0.3);
+  transform: translateY(-2px);
+  box-shadow: 0 12px 30px -10px rgba(124, 58, 237, 0.25);
+}
+
+/* Animated Gradient Text */
+.gradient-text {
+  background: linear-gradient(135deg, #ffffff 20%, #a78bfa 60%, #818cf8 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.gradient-text-accent {
+  background: linear-gradient(135deg, #c084fc 0%, #6366f1 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Dropzone Styles */
+.dropzone-border {
+  border: 2px dashed rgba(148, 163, 184, 0.25);
+  transition: all 0.2s ease-in-out;
+}
+
+.dropzone-border.dragover {
+  border-color: #8b5cf6;
+  background: rgba(139, 92, 246, 0.08);
+  transform: scale(1.01);
+}
+
+/* Custom Toggle Switch */
+.switch-input:checked ~ .switch-track {
+  background-color: #8b5cf6;
+}
+
+.switch-input:checked ~ .switch-track .switch-thumb {
+  transform: translateX(20px);
+}
+
+/* Shimmer Button */
+.btn-shimmer {
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-shimmer::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(
+    60deg,
+    transparent,
+    rgba(255, 255, 255, 0.15),
+    transparent
+  );
+  transform: rotate(30deg);
+  animation: shimmer 4s infinite linear;
+}
+
+@keyframes shimmer {
+  0% { transform: translateX(-100%) rotate(30deg); }
+  100% { transform: translateX(100%) rotate(30deg); }
+}
+
+/* Toast Animation */
+.toast-enter {
+  transform: translateY(100%);
+  opacity: 0;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.toast-show {
+  transform: translateY(0);
+  opacity: 1;
+}
+
+/* Custom Inputs */
+input:focus, select:focus {
+  outline: none;
+  border-color: #8b5cf6 !important;
+  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.2) !important;
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #0f172a;
+}
+::-webkit-scrollbar-thumb {
+  background: #334155;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #475569;
+}
